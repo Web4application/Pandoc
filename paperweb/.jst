@@ -1,0 +1,53 @@
+<!-- INJECTED INTO .OGGX INTERFACE LAYER -->
+<canvas id="warp-bg"></canvas>
+
+<script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net';
+
+    // 1. Initialize Oga-Plex Background Scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+    camera.position.z = 1;
+    camera.rotation.x = Math.PI / 2;
+
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('warp-bg'), antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    // 2. Create the "Data Particles" (Scientific Warp)
+    const starGeo = new THREE.BufferGeometry();
+    const points = [];
+    for (let i = 0; i < 6000; i++) {
+        let star = new THREE.Vector3(Math.random() * 600 - 300, Math.random() * 600 - 300, Math.random() * 600 - 300);
+        star.velocity = 0;
+        star.acceleration = 0.02;
+        points.push(star);
+    }
+    starGeo.setFromPoints(points);
+    const sprite = new THREE.TextureLoader().load('https://threejs.org');
+    const starMaterial = new THREE.PointsMaterial({ color: 0x00f2ff, size: 0.7, map: sprite, transparent: true });
+    const stars = new THREE.Points(starGeo, starMaterial);
+    scene.add(stars);
+
+    // 3. Animation Loop: Warp Speed
+    function animate() {
+        const positions = starGeo.attributes.position.array;
+        for (let i = 0; i < points.length; i++) {
+            points[i].velocity += points[i].acceleration;
+            positions[i * 3 + 1] -= points[i].velocity; // Move along Y axis for "warp" feel
+
+            if (positions[i * 3 + 1] < -200) {
+                positions[i * 3 + 1] = 200;
+                points[i].velocity = 0;
+            }
+        }
+        starGeo.attributes.position.needsUpdate = true;
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+    }
+    animate();
+</script>
+
+<style>
+    #warp-bg { position: fixed; top: 0; left: 0; z-index: -10; width: 100vw; height: 100vh; pointer-events: none; }
+    .glass-pane { pointer-events: auto; } /* Ensure scientific content remains interactable */
+</style>
